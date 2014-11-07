@@ -54,10 +54,9 @@
 %% @end
 %%--------------------------------------------------------------------
 start_link() ->
-	Config_path = get_config_file(acd, cfg_path),
-	Port = load_file(Config_path, []),
-	io:format("(Log) Fast_agi: Puerto de configuracion del fast_agi [~p] ~n", [Port]),
-    start_link(Port).
+	Port = config_server:get_config_element(fast_agi),
+	lager:info("Fast_agi Port [~p]", [Port]),
+	start_link(Port).
 
 %%--------------------------------------------------------------------
 %% @spec start_link(Port::integer()) -> {ok,Pid} | ignore |	 {error,Error}
@@ -190,45 +189,5 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-
-
-%% @spec  get_config_file(App::atom, Par::atom) -> Config
-%% @doc Obtiene la informacion del fichero acd.config
-
-get_config_file(App, Par) ->
-	case application:get_env(App, Par) of
-		{ok, Config} -> Config;
-		undefined ->
-			io:format("No existe fichero de configuracion", []),
-			exit(normal);
-		Reason ->
-			io:format("Error con el fichero de config:~n ~p  ~p Reason: ~p", [App, Par, Reason]),
-			exit(normal)
-	end.
-
-
-search_terms(Term, _Result)->
-	case Term of
-		{fast_agi, Data} -> Data;
-		_ ->  ?PORT
-	end.
-		  
-
-load_file(File, _Term) ->
-	case file:consult(File) of 
-		{ok, Data} -> 
-			lists:foldl(fun search_terms/2, [], Data);
-		{error, {_LineNumber, erl_parse, _ParseMessage} = Reason} ->
-			ExitText = lists:flatten(File ++ " Aproximadamente en la linea "
-                                     ++ file:format_error(Reason)),
-            io:format("Problemas con el fichero de configuracion ~n~s", [ExitText]),
-            exit(ExitText);
-        {error, Reason} ->
-            ExitText = lists:flatten(File ++ ": " ++ file:format_error(Reason)),
-            io:format("Problemas con el fichero de configuracion ~n~s", [ExitText]),
-            exit(ExitText)
-    end.
-
-		
 
 
